@@ -197,6 +197,9 @@ def parse_pubmed_xml(path, include_path=False, nxml=False):
     pub_date_dict = parse_date(tree, "ppub")
     if "year" not in pub_date_dict:
         pub_date_dict = parse_date(tree, "collection")
+    # if still no pub year, default to epub one (this enabled supports for JATS from Biorxiv)
+    if "year" not in pub_date_dict:
+        pub_date_dict = parse_date(tree,"epub")
     pub_date = format_date(pub_date_dict)
 
     try:
