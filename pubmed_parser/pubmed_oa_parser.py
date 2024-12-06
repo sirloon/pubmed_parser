@@ -193,6 +193,9 @@ def parse_pubmed_xml(path, include_path=False, nxml=False):
         journal = ""
 
     dict_article_meta = parse_article_meta(tree)
+    if not dict_article_meta["pmid"] and journal.lower() == "biorxiv":
+        # pudmeb id filled as the bioxriv id, taken from doi
+        dict_article_meta["pmid"] = dict_article_meta["doi"].split(".")[-1]
 
     pub_date_dict = parse_date(tree, "ppub")
     if "year" not in pub_date_dict:
