@@ -2,6 +2,7 @@
 Parsers for PubMed XML
 """
 import os
+import re
 from lxml import etree
 from itertools import chain
 from .utils import read_xml, stringify_affiliation_rec, stringify_children
@@ -83,6 +84,14 @@ def parse_article_meta(tree):
     doi = doi_node.text if doi_node is not None else ""
 
     dict_article_meta = {"pmid": pmid, "pmc": pmc, "doi": doi, "publisher_id": pub_id}
+    journal_node = tree.findall(".//journal-title")
+    if journal_node is not None:
+        journal = " ".join(["".join(node.itertext()) for node in journal_node])
+    else:
+        journal = ""
+    if not dict_article_meta["pmid"] and journal.lower() == "biorxiv":
+        # pudmeb id filled as the bioxriv id, taken from doi
+        dict_article_meta["pmid"] = re.split(r"/|\.", dict_article_meta["doi"])[-1]
 
     return dict_article_meta
 
@@ -193,10 +202,6 @@ def parse_pubmed_xml(path, include_path=False, nxml=False):
         journal = ""
 
     dict_article_meta = parse_article_meta(tree)
-    if not dict_article_meta["pmid"] and journal.lower() == "biorxiv":
-        # pudmeb id filled as the bioxriv id, taken from doi
-        dict_article_meta["pmid"] = dict_article_meta["doi"].split(".")[-1]
-
     pub_date_dict = parse_date(tree, "ppub")
     if "year" not in pub_date_dict:
         pub_date_dict = parse_date(tree, "collection")
@@ -467,9 +472,10 @@ def parse_pubmed_caption(path):
 
     figs = tree.findall(".//fig")
     dict_captions = list()
+    caption = None
     if figs is not None:
         for fig in figs:
-            fig_id = fig.attrib["id"]
+            fig_id = fig.attrib.get("id")
 
             fig_label = fig.find("label")
             if fig_label is not None:
