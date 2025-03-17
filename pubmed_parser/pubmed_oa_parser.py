@@ -89,9 +89,6 @@ def parse_article_meta(tree):
         journal = " ".join(["".join(node.itertext()) for node in journal_node])
     else:
         journal = ""
-    if not dict_article_meta["pmid"] and journal.lower() == "biorxiv":
-        # pudmeb id filled as the bioxriv id, taken from doi
-        dict_article_meta["pmid"] = re.split(r"/|\.", dict_article_meta["doi"])[-1]
 
     return dict_article_meta
 
