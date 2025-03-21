@@ -93,12 +93,12 @@ def parse_article_meta(tree):
     return dict_article_meta
 
 
-def parse_date(tree, date_type):
+def parse_date(tree, date_type, tag="pub-date"):
     """Parse publication dates based on the provided date type."""
     def get_text(node):
         return node.text if node is not None else None
 
-    pub_date_path = f".//pub-date[@pub-type='{date_type}' or @date-type='{date_type}']"
+    pub_date_path = f".//{tag}[@pub-type='{date_type}' or @date-type='{date_type}']"
     date_node = tree.xpath(pub_date_path)
     
     if not date_node:
@@ -115,14 +115,18 @@ def parse_date(tree, date_type):
 
 def format_date(date_dict):
     """Format date dictionary to a string in the format day-month-year."""
-    day = date_dict.get("day", "01")
-    month = date_dict.get("month", "01")
-    year = date_dict.get("year", "")
+    if not date_dict:
+        return None
+    day = date_dict.get("day")
+    month = date_dict.get("month")
+    year = date_dict.get("year")
 
-    if year:
-        return f"{day}-{month}-{year}"
-    else:
-        return f"{day}-{month}"
+    if year and month and day:
+        return f"{year}-{month}-{day}"
+    if year and month:
+         f'{year}-{month}'
+    if month and day:
+        return f"{month}-{day}"
 
 
 def parse_coi_statements(tree):
@@ -199,7 +203,12 @@ def parse_pubmed_xml(path, include_path=False, nxml=False):
         journal = ""
 
     dict_article_meta = parse_article_meta(tree)
-    pub_date_dict = parse_date(tree, "ppub")
+    # PMC
+    # or SpringerNature
+    # or bioRxiv
+    pub_date_dict = parse_date(tree, "ppub") or \
+        parse_date(tree, "pub") or \
+        parse_date(tree, "accepted", "history/date")
     if "year" not in pub_date_dict:
         pub_date_dict = parse_date(tree, "collection")
     # if still no pub year, default to epub one (this enabled supports for JATS from Biorxiv)
